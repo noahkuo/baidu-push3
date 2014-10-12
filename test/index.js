@@ -4,11 +4,12 @@ var should = require('should'),
   config = require('./config'),
   userId = config.userId;
 
-var Push = require('../index'),
+var Push = require('..'),
   client = Push.createClient(config);
 
-var testTag = {};
-testTag.name = 'test-tag';
+var channelId, testTag = {
+  name: 'test-tag'
+};
 
 describe('# base api', function() {
   it('should query bind list', function(done) {
@@ -18,6 +19,8 @@ describe('# base api', function() {
 
     client.queryBindList(option, function(err, res) {
       assertError(err);
+
+      channelId = res.response_params.binds[0].channel_id;
 
       res.request_id.should.above(0);
       res.response_params.should.have.keys('total_num', 'amount', 'binds');
@@ -77,6 +80,16 @@ describe('# advanced api', function() {
 
       res.request_id.should.above(0);
       res.response_params.total_num.should.above(0);
+      done();
+    });
+  });
+
+  it('should delete messages', function(done) {
+    client.deleteMsg({
+      user_id: userId,
+      msg_id: ['5677767751112984971']
+    }, function() {
+      // 这里是百度云的问题, 返回的 msg_id 为 string, 却要求请求 msg_id 为 number (超出 js 最大值)
       done();
     });
   });
@@ -218,6 +231,55 @@ describe('# advanced api', function() {
         }
       });
       flag.should.equal(0);
+      done();
+    });
+  });
+
+  it('should query device type', function(done) {
+    client.queryDeviceType({
+      channel_id: channelId
+    }, function(err, res) {
+      assertError(err);
+
+      should.exist(res.response_params.device_type);
+      res.should.have.keys('request_id', 'response_params');
+      done();
+    });
+  });
+});
+
+describe('edge case', function() {
+  it('invalid params', function(done) {
+    var client = Push.createClient({
+      apiKey: 'xx',
+      secretKey: 'oo'
+    });
+
+    client.verifyBind({
+      user_id: userId
+    }, function(err, res) {
+      should.exist(err);
+      should.not.exist(res);
+      err.status.should.equal(400);
+      err.code.should.equal(30602);
+      (err instanceof Error).should.equal(true);
+      done();
+    });
+  });
+
+  it('invalid host', function(done) {
+    var client = Push.createClient({
+      host: 'xx.oo',
+      apiKey: 'xx',
+      secretKey: 'oo'
+    });
+
+    client.verifyBind({
+      user_id: userId
+    }, function(err, res) {
+      should.exist(err);
+      should.not.exist(res);
+      (err instanceof Error).should.equal(true);
       done();
     });
   });

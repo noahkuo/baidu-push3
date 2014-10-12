@@ -1,8 +1,10 @@
-[![NPM](https://nodei.co/npm/baidu-push.png?downloads=true)](https://nodei.co/npm/baidu-push/)
+[![NPM version][npm-img]][npm-url]
+[![License][license-img]][license-url]
+[![Dependency status][david-img]][david-url]
 
 ### baidu-push
 
-node.js sdk for baidu push service
+node.js sdk for baidu push service, friendly with **co**, **koa** ...
 
 ```bash
 npm install baidu-push
@@ -10,7 +12,7 @@ npm install baidu-push
 
 ### 百度云推送
 * [官方文档](http://developer.baidu.com/wiki/index.php?title=docs/cplat/push/api/list)
-* aoi参数与官网文档一致，必需的`method`, `apikey`, `timestamp`, `sign`等参数已内部处理，无需在每次调用时输入。
+* api参数与官网文档一致, 必需的 `method`, `apikey`, `timestamp`, `sign` 等参数已内部处理, 无需在每次调用时输入
 
 ### api列表
 * queryBindList
@@ -29,15 +31,15 @@ npm install baidu-push
 * [参考代码](test/index.js)
 
 ```js
-var Push   = require('baidu-push')
-var userId = 'a userId'
+var Push   = require('baidu-push');
+var userId = 'a userId';
 
 var pushOption = {
   apiKey: 'your api key',
   secretKey: 'your secret key'
-}
+};
 
-var client = Push.createClient(pushOption)
+var client = Push.createClient(pushOption);
 ```
 
 根据 userId 向某一 user 推送消息
@@ -47,9 +49,9 @@ var option = {
   user_id: userId,
   messages: ["hello"],
   msg_keys: ["title"]
-}
+};
 
-client.pushMsg(option, function(error, result) {})
+client.pushMsg(option, function(error, result) {});
 ```
 
 根据 tag 向一群 users 推送消息
@@ -102,5 +104,30 @@ var option = {
 client.queryBindList(option, function(error, result) {})
 ```
 
+### use with `co` or `koa`
+
+```js
+var pushOption = {
+  wrapper: 'thunk', // or: promise
+  apiKey: 'your api key',
+  secretKey: 'your secret key'
+}
+
+var client = Push.createClient(pushOption)
+
+// in co or koa
+yield client.fetchTag()
+```
+
+### Coverage
+98%
+
 ### License
 MIT
+
+[npm-img]: https://img.shields.io/npm/v/baidu-push.svg?style=flat-square
+[npm-url]: https://npmjs.org/package/baidu-push
+[license-img]: https://img.shields.io/badge/license-MIT-green.svg?style=flat-square
+[license-url]: http://opensource.org/licenses/MIT
+[david-img]: https://img.shields.io/david/coderhaoxin/baidu-push.svg?style=flat-square
+[david-url]: https://david-dm.org/coderhaoxin/baidu-push

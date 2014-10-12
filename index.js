@@ -1,6 +1,7 @@
 'use strict';
 
-var crypto = require('crypto'),
+var assert = require('assert'),
+  crypto = require('crypto'),
   http = require('http');
 
 var PROTOCOL_SCHEMA = 'http://',
@@ -52,7 +53,6 @@ function generateSign(method, url, params, secretKey) {
 }
 
 function request(bodyArgs, path, secretKey, host, callback) {
-  callback = callback || noop;
   bodyArgs.sign = generateSign('POST', PROTOCOL_SCHEMA + host + path, bodyArgs, secretKey);
 
   var bodyArgsArray = [];
@@ -83,19 +83,23 @@ function request(bodyArgs, path, secretKey, host, callback) {
 
     res.on('end', function() {
       var data;
+
       try {
         data = JSON.parse(resBody);
       } catch (e) {
+        e.status = res.statusCode;
+        e.code = 'JSON Parse Error';
+
         return callback(e);
       }
 
       if (res.statusCode !== 200) {
         var err = new Error();
 
+        err.code = data.error_code;
         err.status = res.statusCode;
+        err.message = data.error_msg;
         err.request_id = data.request_id;
-        err.error_code = data.error_code;
-        err.error_msg = data.error_msg;
 
         return callback(err);
       }
@@ -111,22 +115,15 @@ function request(bodyArgs, path, secretKey, host, callback) {
   req.end(bodyString);
 }
 
-/*
+/**
  * Push
  */
 function Push(options) {
-  options = options || {};
-  options.host = options.host || 'channel.api.duapp.com';
-
-  var self = this;
-  self.apiKey = options.apiKey;
-  self.secretKey = options.secretKey;
-  self.host = options.host;
+  this.apiKey = options.apiKey;
+  this.secretKey = options.secretKey;
+  this.host = options.host || 'channel.api.duapp.com';
 }
 
-/*
- * 基础 api
- */
 Push.prototype.queryBindList = function(options, callback) {
   options = options || {};
   callback = callback || noop;
@@ -162,9 +159,6 @@ Push.prototype.pushMsg = function(options, callback) {
   });
 };
 
-/*
- * 高级 api
- */
 Push.prototype.verifyBind = function(options, callback) {
   options = options || {};
   callback = callback || noop;
@@ -310,9 +304,18 @@ Push.prototype.queryDeviceType = function(options, callback) {
   });
 };
 
-/*
+/**
  * exports
  */
 exports.createClient = function(options) {
-  return new Push(options);
+  assert(typeof options === 'object', 'invalid options');
+
+  var client = new Push(options);
+
+  var wrapper = options.wrapper;
+  if (wrapper) {
+    require('thunkify-or-promisify')(client, wrapper);
+  }
+
+  return client;
 };
