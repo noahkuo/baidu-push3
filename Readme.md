@@ -35,8 +35,10 @@ var Push   = require('baidu-push');
 var userId = 'a userId';
 
 var pushOption = {
-  apiKey: 'your api key',
-  secretKey: 'your secret key'
+  apiKey: 'api key',
+  secretKey: 'secret key',
+  // timeout: 2000, // optional - default is: 5000
+  // agent: false   // optional - default is: maxSockets = 20
 };
 
 var client = Push.createClient(pushOption);
