@@ -4,9 +4,6 @@ var assert = require('assert'),
   crypto = require('crypto'),
   http = require('http');
 
-var PROTOCOL_SCHEMA = 'http://',
-  COMMON_PATH = '/rest/2.0/channel/';
-
 /**
  * Push
  */
@@ -14,6 +11,7 @@ function Push(options) {
   this.apiKey = options.apiKey;
   this.secretKey = options.secretKey;
   this.host = options.host || 'channel.api.duapp.com';
+  this.path = options.path || '/rest/2.0/channel/';
   this.timeout = options.timeout || 5000; // 5s
 
   if (options.hasOwnProperty('agent')) {
@@ -31,7 +29,7 @@ Push.prototype.request = function(path, bodyParams, callback) {
     host = this.host;
 
   bodyParams.apikey = this.apiKey;
-  bodyParams.sign = generateSign('POST', PROTOCOL_SCHEMA + host + path, bodyParams, secretKey);
+  bodyParams.sign = generateSign('POST', 'http://' + host + path, bodyParams, secretKey);
 
   var bodyArgsArray = [];
 
@@ -52,17 +50,19 @@ Push.prototype.request = function(path, bodyParams, callback) {
   };
 
   var req = http.request(options, function(res) {
-    var chunks = [];
+    var chunks = [],
+      size = 0;
 
     res.on('data', function(chunk) {
       chunks.push(chunk);
+      size += chunk.length;
     });
 
     res.on('end', function() {
       var data;
 
       try {
-        data = JSON.parse(Buffer.concat(chunks));
+        data = JSON.parse(Buffer.concat(chunks, size));
       } catch (e) {
         e.status = res.statusCode;
         e.code = 'JSON Parse Error';
@@ -86,7 +86,7 @@ Push.prototype.request = function(path, bodyParams, callback) {
   });
 
   req.on('error', function(e) {
-    callback(e, null);
+    callback(e);
   });
 
   req.end(bodyString);
@@ -96,7 +96,7 @@ Push.prototype.queryBindList = function(options, callback) {
   options = options || {};
   callback = callback || noop;
 
-  var path = COMMON_PATH + (options.channel_id || 'channel');
+  var path = this.path + (options.channel_id || 'channel');
 
   options.method = 'query_bindlist';
   options.timestamp = getTimestamp();
@@ -107,7 +107,7 @@ Push.prototype.queryBindList = function(options, callback) {
 Push.prototype.pushMsg = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = COMMON_PATH + 'channel';
+  var path = this.path + 'channel';
 
   options.method = 'push_msg';
   options.messages = JSON.stringify(options.messages);
@@ -120,7 +120,7 @@ Push.prototype.pushMsg = function(options, callback) {
 Push.prototype.verifyBind = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = COMMON_PATH + (options.channel_id || 'channel');
+  var path = this.path + (options.channel_id || 'channel');
 
   options.method = 'verify_bind';
   options.timestamp = getTimestamp();
@@ -131,7 +131,7 @@ Push.prototype.verifyBind = function(options, callback) {
 Push.prototype.fetchMsg = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = COMMON_PATH + (options.channel_id || 'channel');
+  var path = this.path + (options.channel_id || 'channel');
 
   options.method = 'fetch_msg';
   options.timestamp = getTimestamp();
@@ -142,7 +142,7 @@ Push.prototype.fetchMsg = function(options, callback) {
 Push.prototype.fetchMsgCount = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = COMMON_PATH + (options.channel_id || 'channel');
+  var path = this.path + (options.channel_id || 'channel');
 
   options.method = 'fetch_msgcount';
   options.timestamp = getTimestamp();
@@ -153,7 +153,7 @@ Push.prototype.fetchMsgCount = function(options, callback) {
 Push.prototype.deleteMsg = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = COMMON_PATH + (options.channel_id || 'channel');
+  var path = this.path + (options.channel_id || 'channel');
 
   options.method = 'delete_msg';
   options.msg_ids = JSON.stringify(options.msg_ids);
@@ -165,7 +165,7 @@ Push.prototype.deleteMsg = function(options, callback) {
 Push.prototype.setTag = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = COMMON_PATH + 'channel';
+  var path = this.path + 'channel';
 
   options.method = 'set_tag';
   options.timestamp = getTimestamp();
@@ -176,7 +176,7 @@ Push.prototype.setTag = function(options, callback) {
 Push.prototype.fetchTag = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = COMMON_PATH + 'channel';
+  var path = this.path + 'channel';
 
   options.method = 'fetch_tag';
   options.timestamp = getTimestamp();
@@ -187,7 +187,7 @@ Push.prototype.fetchTag = function(options, callback) {
 Push.prototype.deleteTag = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = COMMON_PATH + 'channel';
+  var path = this.path + 'channel';
 
   options.method = 'delete_tag';
   options.timestamp = getTimestamp();
@@ -198,7 +198,7 @@ Push.prototype.deleteTag = function(options, callback) {
 Push.prototype.queryUserTags = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = COMMON_PATH + 'channel';
+  var path = this.path + 'channel';
 
   options.method = 'query_user_tags';
   options.timestamp = getTimestamp();
@@ -209,7 +209,7 @@ Push.prototype.queryUserTags = function(options, callback) {
 Push.prototype.queryDeviceType = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = COMMON_PATH + (options.channel_id || 'channel');
+  var path = this.path + (options.channel_id || 'channel');
 
   options.method = 'query_device_type';
   options.timestamp = getTimestamp();

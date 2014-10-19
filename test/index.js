@@ -269,9 +269,10 @@ describe('edge case', function() {
 
   it('invalid host', function(done) {
     var client = Push.createClient({
-      host: 'xx.oo',
+      host: 'localhost',
       apiKey: 'xx',
-      secretKey: 'oo'
+      secretKey: 'oo',
+      agent: false
     });
 
     client.verifyBind({
