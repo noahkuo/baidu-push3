@@ -42,7 +42,6 @@ Push.prototype.request = function(path, bodyParams, callback) {
     host: host,
     path: path,
     method: 'POST',
-    timeout: timeout,
     headers: {
       'Content-Length': bodyString.length,
       'Content-Type': 'application/x-www-form-urlencoded'
@@ -82,6 +81,13 @@ Push.prototype.request = function(path, bodyParams, callback) {
       }
 
       callback(null, data);
+    });
+  });
+
+  req.on('socket', function(socket) {
+    socket.setTimeout(timeout);
+    socket.on('timeout', function() {
+      req.abort();
     });
   });
 
