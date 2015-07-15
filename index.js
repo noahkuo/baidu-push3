@@ -10,8 +10,8 @@ var assert = require('assert'),
 function Push(options) {
   this.apiKey = options.apiKey;
   this.secretKey = options.secretKey;
-  this.host = options.host || 'channel.api.duapp.com';
-  this.path = options.path || '/rest/2.0/channel/';
+  this.host = options.host || 'api.tuisong.baidu.com';
+  this.path = options.path || '/rest/3.0/';
   this.timeout = options.timeout || 5000; // 5s
 
   if (options.hasOwnProperty('agent')) {
