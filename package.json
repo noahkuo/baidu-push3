@@ -1,7 +1,7 @@
 {
-  "name": "baidu-push",
-  "version": "0.6.1",
-  "description": "node.js sdk for baidu push service",
+  "name": "baidu-push3",
+  "version": "0.0.1",
+  "description": "node.js sdk for baidu push service REST API 3",
   "main": "index.js",
   "scripts": {
     "test": "node_modules/.bin/mocha --harmony -R spec -t 5000 test/*.js",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/coderhaoxin/baidu-push.git"
+    "url": "https://github.com/noahkuo/baidu-push3.git"
   },
   "keywords": [
     "notification",
@@ -35,9 +35,9 @@
     "should": "*"
   },
   "bugs": {
-    "url": "https://github.com/coderhaoxin/baidu-push/issues"
+    "url": "https://github.com/noahkuo/baidu-push3/issues"
   },
   "author": "haoxin",
   "license": "MIT",
-  "homepage": "https://github.com/coderhaoxin/baidu-push"
+  "homepage": "https://github.com/noahkuo/baidu-push3"
 }
