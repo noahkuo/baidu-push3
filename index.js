@@ -2,7 +2,9 @@
 
 var assert = require('assert'),
   crypto = require('crypto'),
-  http = require('http');
+  http = require('http'),
+  os = require('os'),
+  url = require('url');
 
 /**
  * Push
@@ -17,20 +19,20 @@ function Push(options) {
   if (options.hasOwnProperty('agent')) {
     this.agent = options.agent;
   } else {
-    var agent = new http.Agent();
-    agent.maxSockets = 20;
+    var agent = "BCCS_SDK/3.0 ("+os.platform()+","+os.release()+") nodeJS/"+Number(process.version.match(/^v(\d+\.\d+)/)[1]);
+	console.log(agent);
+    //agent.maxSockets = 20;
     this.agent = agent;
   }
 }
 
 Push.prototype.request = function(path, bodyParams, callback) {
   var secretKey = this.secretKey,
-    timeout = this.timeout,
-    host = this.host;
+        timeout = this.timeout,
+           host = this.host;
 
   bodyParams.apikey = this.apiKey;
-  bodyParams.sign = generateSign('POST', 'http://' + host + path, bodyParams, secretKey);
-
+  bodyParams.sign = signKey(url.parse("http://"+host+path), bodyParams, secretKey);
   var bodyArgsArray = [];
 
   for (var i in bodyParams) {
@@ -44,7 +46,7 @@ Push.prototype.request = function(path, bodyParams, callback) {
     method: 'POST',
     headers: {
       'Content-Length': bodyString.length,
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'
     }
   };
 
@@ -98,126 +100,201 @@ Push.prototype.request = function(path, bodyParams, callback) {
   req.end(bodyString);
 };
 
-Push.prototype.queryBindList = function(options, callback) {
+Push.prototype.pushSingleDevice = function(options, callback) {
   options = options || {};
   callback = callback || noop;
+  var path = this.path + 'push/single_device';
 
-  var path = this.path + (options.channel_id || 'channel');
-
-  options.method = 'query_bindlist';
+  options.msg = JSON.stringify(options.msg);
   options.timestamp = getTimestamp();
 
   this.request(path, options, callback);
 };
 
-Push.prototype.pushMsg = function(options, callback) {
+
+Push.prototype.pushAll = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = this.path + 'channel';
+  var path = this.path + 'push/all';
 
-  options.method = 'push_msg';
-  options.messages = JSON.stringify(options.messages);
-  options.msg_keys = JSON.stringify(options.msg_keys);
+  options.msg = JSON.stringify(options.msg);
   options.timestamp = getTimestamp();
 
   this.request(path, options, callback);
 };
 
-Push.prototype.verifyBind = function(options, callback) {
+Push.prototype.pushTags = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = this.path + (options.channel_id || 'channel');
+  var path = this.path + 'push/tags';
 
-  options.method = 'verify_bind';
+  options.msg = JSON.stringify(options.msg);
   options.timestamp = getTimestamp();
 
   this.request(path, options, callback);
 };
 
-Push.prototype.fetchMsg = function(options, callback) {
+Push.prototype.pushBatchDevice = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = this.path + (options.channel_id || 'channel');
+  var path = this.path + 'push/tags';
 
-  options.method = 'fetch_msg';
+  options.msg = JSON.stringify(options.msg);
   options.timestamp = getTimestamp();
 
   this.request(path, options, callback);
 };
 
-Push.prototype.fetchMsgCount = function(options, callback) {
+Push.prototype.reportQueryMsgStatus = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = this.path + (options.channel_id || 'channel');
+  var path = this.path + 'report/query_msg_status';
 
-  options.method = 'fetch_msgcount';
+  options.msg = JSON.stringify(options.msg);
   options.timestamp = getTimestamp();
 
   this.request(path, options, callback);
 };
 
-Push.prototype.deleteMsg = function(options, callback) {
+
+Push.prototype.reportQueryTimerRecords = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = this.path + (options.channel_id || 'channel');
+  var path = this.path + 'report/query_timer_records';
 
-  options.method = 'delete_msg';
-  options.msg_ids = JSON.stringify(options.msg_ids);
+  options.msg = JSON.stringify(options.msg);
   options.timestamp = getTimestamp();
 
   this.request(path, options, callback);
 };
 
-Push.prototype.setTag = function(options, callback) {
+Push.prototype.reportQueryTopicRecords = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = this.path + 'channel';
+  var path = this.path + 'report/query_topic_records';
 
-  options.method = 'set_tag';
+  options.msg = JSON.stringify(options.msg);
   options.timestamp = getTimestamp();
 
   this.request(path, options, callback);
 };
 
-Push.prototype.fetchTag = function(options, callback) {
+Push.prototype.appQueryTags = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = this.path + 'channel';
+  var path = this.path + 'app/query_tags';
 
-  options.method = 'fetch_tag';
+  options.msg = JSON.stringify(options.msg);
   options.timestamp = getTimestamp();
 
   this.request(path, options, callback);
 };
 
-Push.prototype.deleteTag = function(options, callback) {
+Push.prototype.appCreateTag = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = this.path + 'channel';
+  var path = this.path + 'app/create_tag';
 
-  options.method = 'delete_tag';
+  options.msg = JSON.stringify(options.msg);
   options.timestamp = getTimestamp();
 
   this.request(path, options, callback);
 };
 
-Push.prototype.queryUserTags = function(options, callback) {
+Push.prototype.appDelTag = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = this.path + 'channel';
+  var path = this.path + 'app/del_tag';
 
-  options.method = 'query_user_tags';
+  options.msg = JSON.stringify(options.msg);
   options.timestamp = getTimestamp();
 
   this.request(path, options, callback);
 };
 
-Push.prototype.queryDeviceType = function(options, callback) {
+Push.prototype.tagAddDevices = function(options, callback) {
   options = options || {};
   callback = callback || noop;
-  var path = this.path + (options.channel_id || 'channel');
+  var path = this.path + 'tag/add_devices';
 
-  options.method = 'query_device_type';
+  options.msg = JSON.stringify(options.msg);
+  options.timestamp = getTimestamp();
+
+  this.request(path, options, callback);
+};
+
+Push.prototype.tagDelDevices = function(options, callback) {
+  options = options || {};
+  callback = callback || noop;
+  var path = this.path + 'tag/del_devices';
+
+  options.msg = JSON.stringify(options.msg);
+  options.timestamp = getTimestamp();
+
+  this.request(path, options, callback);
+};
+
+Push.prototype.tagDeviceNum = function(options, callback) {
+  options = options || {};
+  callback = callback || noop;
+  var path = this.path + 'tag/device_num';
+
+  options.msg = JSON.stringify(options.msg);
+  options.timestamp = getTimestamp();
+
+  this.request(path, options, callback);
+};
+
+Push.prototype.timerQueryList = function(options, callback) {
+  options = options || {};
+  callback = callback || noop;
+  var path = this.path + 'timer/query_list';
+
+  options.msg = JSON.stringify(options.msg);
+  options.timestamp = getTimestamp();
+
+  this.request(path, options, callback);
+};
+
+Push.prototype.timerCancel = function(options, callback) {
+  options = options || {};
+  callback = callback || noop;
+  var path = this.path + 'timer/cancel';
+
+  options.msg = JSON.stringify(options.msg);
+  options.timestamp = getTimestamp();
+
+  this.request(path, options, callback);
+};
+
+Push.prototype.topicQueryList = function(options, callback) {
+  options = options || {};
+  callback = callback || noop;
+  var path = this.path + 'topic/query_list';
+
+  options.msg = JSON.stringify(options.msg);
+  options.timestamp = getTimestamp();
+
+  this.request(path, options, callback);
+};
+
+Push.prototype.reportStatisticDevice = function(options, callback) {
+  options = options || {};
+  callback = callback || noop;
+  var path = this.path + 'report/statistic_device';
+
+  options.msg = JSON.stringify(options.msg);
+  options.timestamp = getTimestamp();
+
+  this.request(path, options, callback);
+};
+
+Push.prototype.reportStatisticTopic = function(options, callback) {
+  options = options || {};
+  callback = callback || noop;
+  var path = this.path + 'report/statistic_topic';
+
+  options.msg = JSON.stringify(options.msg);
   options.timestamp = getTimestamp();
 
   this.request(path, options, callback);
@@ -275,4 +352,61 @@ function generateSign(method, url, params, secretKey) {
   var sign = md5sum.digest('hex');
 
   return sign;
+}
+
+// 兼容php的urlencode
+function fullEncodeURIComponent (str) {
+    var rv = encodeURIComponent(str).replace(/[!'()*~]/g, function(c) {
+      return '%' + c.charCodeAt(0).toString(16).toUpperCase();
+    });
+    return rv.replace(/\%20/g,'+');
+}
+
+/**
+ * 生成请求签名
+ * 
+ * @param {object} reqParams, 由url.parse解析出来的对象内容,描述请求的位置和url及参数等信息的对象
+ * @param {object} postParams post表单内容
+ * @param {string} secretKey 开发者中心的SK
+ * @return {string} 签名值
+ */
+var signKey = function (reqParam, postParmas, secretKey) {
+
+    var basekey = "";
+
+    var method = "POST"; //reqParam.method.toUpperCase();
+    var baseurl = reqParam.href;
+    var query = reqParam.query || false;
+    var param = {};
+    var paramStr = '';
+
+    if (query) {
+        query = querystring.parse(query);
+        for ( var key in query) {
+            param[key] = query[key];
+        }
+    }
+
+    if (postParmas) {
+        for ( var key in postParmas) {
+            param[key] = postParmas[key];
+        }
+    }
+
+    var keys = Object.keys(param).sort();
+
+    keys.forEach(function (key) {
+        paramStr += key + "=" + param[key];
+    })
+
+    basekey = method + baseurl + paramStr + secretKey;
+
+    //console.log("basekey : ", basekey);
+
+    var md5 = crypto.createHash('md5');
+
+    basekey = fullEncodeURIComponent(basekey);
+    md5.update(basekey);
+
+    return md5.digest('hex');
 }
